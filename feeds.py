@@ -1,5 +1,6 @@
 import json
 import os
+import pandas as pd
 
 
 def prepare_write_hook(fpath, clear_file=False):
@@ -12,8 +13,19 @@ def prepare_write_hook(fpath, clear_file=False):
     return write_callback
 
 
+def read_feed(fpath):
+    df = pd.DataFrame()
+    with open(fpath, 'r') as f:
+        for line in f:
+            row_data = json.loads(line)
+            # print(row_data)
+            df = df.append(row_data, ignore_index=True)
+    return df
+
+
 if __name__ == '__main__':
-    write_hook = prepare_write_hook('kek.json', clear_file=True)
-    for i in range(100):
-        data = dict(a=i)
-        write_hook(data)
+    print(read_feed('feed.json').head())
+    # write_hook = prepare_write_hook('kek.json', clear_file=True)
+    # for i in range(100):
+    #     data = dict(a=i)
+    #     write_hook(data)
