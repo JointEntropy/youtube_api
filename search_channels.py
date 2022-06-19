@@ -1,6 +1,9 @@
 import requests
 from loguru import logger
 import json
+import pandas as pd
+import os
+
 
 class SearchStateManager:
     """
@@ -11,6 +14,7 @@ class SearchStateManager:
 
 class SearchManager:
     base_url = 'https://youtube.googleapis.com/youtube/v3/search?'
+    get_cats_base_url = 'https://youtube.googleapis.com/youtube/v3/videoCategories?'
     state_path = 'state.json'
     allowed_params = set(['order', 'type', 'q', 'regionCode',
                           'relevanceLanguage', 'maxResults',
@@ -49,7 +53,9 @@ class SearchManager:
             response = requests.get(final_url)
             data = response.json()
             if batch_id == 0:
-                total_results = total_results or data['pageInfo']['totalResults']
+                existing_results = data['pageInfo']['totalResults']
+                logger.debug(f'Number of existing results are {existing_results} ')
+                total_results = total_results or existing_results
             self.next_page_token_ = data.get('nextPageToken')
             for item in data['items']:
                 yield item
@@ -59,6 +65,16 @@ class SearchManager:
                 break
             if self.save_search_state:
                 self.save_state(search_params, self.next_page_token_)
+
+    def get_videos_cats(self, region_code):
+        search_params = {'regionCode': region_code}
+        url = f'{SearchManager.get_cats_base_url}part=id%2Csnippet&key={self.API_KEY}'
+        url += '&' + '&'.join(SearchManager.construct_query_string(search_params))
+        response = requests.get(url)
+        result_cats = pd.DataFrame(pd.DataFrame(response.json())['items'].tolist())
+        result_cats['title'] = result_cats['snippet'].apply(lambda x: x.get('title'))
+        result_cats = result_cats.set_index('id')['title'].to_dict()
+        return result_cats
 
     @staticmethod
     def save_state(search_params, next_page_token):
@@ -88,22 +104,22 @@ if __name__ == '__main__':
     with open('config.json', 'r') as f:
         config = json.load(f)
     sm = SearchManager(config, save_search_state=True)
-
-    # new search
-    search_params = {
-        'regionCode': 'RU',
-        'relevanceLanguage': 'ru',
-        'q': 'спорт',
-        'order': 'viewCount',  # 'videoCount',
-        'type': 'channel',
-        'maxResults': 25,
-        # 'categoryId': 15
-    }
-    ## CContinue search
-    next_page_token = 'CJYBEAA'
-    # search_params, next_page_token = SearchManager.load_state()
-
-    for item_search in sm.search(total_results=25, next_page_token=next_page_token, **search_params):
-        print(item_search)
-
+    # print(sm.get_videos_cats(region_code='RU'))
+    # # new search
+    # search_params = {
+    #     'regionCode': 'RU',
+    #     'relevanceLanguage': 'ru',
+    #     'q': 'спорт',
+    #     'order': 'viewCount',  # 'videoCount',
+    #     'type': 'channel',
+    #     'maxResults': 25,
+    #     # 'categoryId': 15
+    # }
+    # ## CContinue search
+    # next_page_token = 'CJYBEAA'
+    # # search_params, next_page_token = SearchManager.load_state()
+    #
+    # for item_search in sm.search(total_results=25, next_page_token=next_page_token, **search_params):
+    #     print(item_search)
+    #
 

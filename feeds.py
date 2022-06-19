@@ -9,7 +9,7 @@ def prepare_write_hook(fpath, clear_file=False):
 
     def write_callback(data):
         with open(fpath, 'a') as f:
-            f.write(json.dumps(data) + '\n')
+            f.write(json.dumps(data, ensure_ascii=True) + '\n')
     return write_callback
 
 
