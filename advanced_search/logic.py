@@ -3,17 +3,6 @@ from time import sleep
 from loguru import logger
 
 
-class DataManager:
-    def __init__(self):
-        self.all_known_channels, self.all_known_videos = set(), set()
-
-    def add_channels(self, new_channels):
-        self.all_known_channels = self.all_known_channels | new_channels
-
-    def add_videos(self, new_videos):
-        self.all_known_videos = self.all_known_videos | new_videos
-
-
 def crawl(seed_video,
           feed_sampler,
           data_manager,

@@ -1,6 +1,6 @@
 import numpy as np
-from logic import crawl, DataManager
-from synthetic import spawn_feed_sampler, extract_videos, extract_channels
+from logic import crawl
+from synthetic import spawn_feed_sampler, extract_videos, extract_channels, DataManager
 
 
 if __name__ == '__main__':
