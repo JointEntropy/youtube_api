@@ -1,7 +1,9 @@
 from tqdm.auto import tqdm
 from loguru import logger
-
+from time import sleep
 import redis
+from youtube_feed import get_videos_meta_by_id
+from typing import Union
 
 redis = redis.Redis(
     host='localhost',
@@ -10,25 +12,33 @@ redis = redis.Redis(
 queue_key = 'youtube_crawler_queue'
 
 
-def push_to_stack(items):
-    redis.lpush(queue_key, *items)
+def extract_content(key):
+    items = set(c.decode('utf-8') for c in (redis.lrange(key, 0, end=redis.llen(key))))
+    redis.delete(key)
+    return items
 
 
-def pop_from_stack():
-    return redis.lpop(queue_key).decode('utf-8')
+def push_to_stack(key, items):
+    if len(items)==0:
+        return
+    redis.lpush(key, *items)
 
 
-def get_stack_len():
-    return redis.llen(queue_key)
+def pop_from_stack(key):
+    return redis.lpop(key).decode('utf-8')
 
 
-def crawl(seed_video,
-          feed_sampler,
+def get_stack_len(key):
+    return redis.llen(key)
+
+
+def crawl(seed_video: str,
+          feed_sampler: callable,
           data_manager,
-          extractors_pair,
-          max_iters=100,
-          log_each=None
-          ):
+          extractors_pair: Union[callable, callable],
+          max_iters: int = 100,
+          log_each: Union[int, None] = None
+    ):
     current_video = seed_video
     iter_id = 0
 
@@ -40,17 +50,26 @@ def crawl(seed_video,
         if iter_id >= max_iters:
             break
         iterator.update(1)
+        # Make request to youtube and get new video candidates
         feed = feed_sampler(current_video)
-        new_channels, new_videos = extract_channels(feed), extract_videos(feed)
-
-        push_to_stack(list(new_videos-data_manager.all_known_videos))
         #
+        true_new_videos = list(set(feed) - data_manager.all_known_videos)
+        videos_meta = get_videos_meta_by_id(true_new_videos)
+        data_manager.save_videos_meta(videos_meta)
+
+        new_channels, new_videos = extract_channels(videos_meta), extract_videos(videos_meta)
+
+        # After getting meta info we can choose in which order we should push to stack.
+        push_to_stack(queue_key, true_new_videos)
+
+        # Add new entries ids to data manager
         data_manager.add_channels(new_channels)
         data_manager.add_videos(new_videos)
-        #
-        current_video = pop_from_stack() # visit_stack.pop()
+
+        # Select next candidate
+        current_video = pop_from_stack(queue_key)
         iter_id += 1
 
         if log_each and iter_id % log_each == 0:
-            logger.debug(f'Iter id: {iter_id}; VS: {get_stack_len()}; '
+            logger.debug(f'Iter id: {iter_id}; VS: {get_stack_len(queue_key)}; '
                          f'KV: {len(data_manager.all_known_videos)}; KC: {len(data_manager.all_known_channels)}')

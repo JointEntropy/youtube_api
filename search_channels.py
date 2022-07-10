@@ -14,11 +14,14 @@ class SearchStateManager:
 
 class SearchManager:
     base_url = 'https://youtube.googleapis.com/youtube/v3/search?'
+    video_url = 'https://youtube.googleapis.com/youtube/v3/videos?'
     get_cats_base_url = 'https://youtube.googleapis.com/youtube/v3/videoCategories?'
     state_path = 'state.json'
     allowed_params = set(['order', 'type', 'q', 'regionCode',
+                          'part',
                           'relevanceLanguage', 'maxResults',
-                          'categoryId'
+                          'categoryId', 'relatedToVideoId',
+                          'id'
                           ])
 
     def __init__(self, config, save_search_state=False):
