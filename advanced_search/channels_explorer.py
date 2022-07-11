@@ -14,6 +14,7 @@ class DataManager:
 
     def __init__(self, videos, channels):
         logger.debug(f'Loaded videos ids from redis: {len(videos)}')
+        logger.debug(f'Loaded channels ids from redis: {len(channels)}')
         self.all_known_channels, self.all_known_videos = channels, videos
 
     def add_channels(self, new_channels):
@@ -34,6 +35,10 @@ class DataManager:
                 f.write(f'{json.dumps(item)}\n')
 
 
+channels_extractors = lambda x: list(map(lambda x: x['data']['snippet']['channelId'], x))
+videos_extractors = lambda x: list(map(lambda x: x['video_id'], x))
+
+
 def start_exploring():
     start_key = '0dnLGoVYaz8'
     if get_stack_len(queue_key):
@@ -41,11 +46,11 @@ def start_exploring():
     feed_sampler = youtube_feed_sampler()
     dm = DataManager(videos=extract_content(DataManager.cache_videos),
                      channels=extract_content(DataManager.cache_channels))
+
     try:
         crawl(start_key, feed_sampler,
-              extractors_pair=(lambda x: set(list(map(lambda x: x['data']['snippet']['channelId'], x))),
-                               lambda x: set(list(map(lambda x: x['video_id'], x)))),
-              data_manager=dm, log_each=5, max_iters=2)
+              extractors_pair=(channels_extractors, videos_extractors),
+              data_manager=dm, log_each=5, max_iters=10)
     finally:
         dm.save_progress()
 
