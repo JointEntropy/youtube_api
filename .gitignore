@@ -3,3 +3,6 @@ __pycache__
 venv
 .idea
 advanced_search/tempo_file.jsonl
+research/__pycache__
+advanced_search/__pycache__
+research/.ipynb_checkpoints
