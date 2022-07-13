@@ -51,7 +51,7 @@ class GraphDataManager:
         self.all_known_videos = self.all_known_videos | set(new_videos)
 
         # Save relevance info on the original data so all new edges will be stored(even for existing nodes).
-        print('Any shit update3', list(f for f in self.G.nodes if (self.G.nodes[f].get('nodetype', None) is None)))
+        # print('Any shit update3', list(f for f in self.G.nodes if (self.G.nodes[f].get('nodetype', None) is None)))
         ### Тут происходит залупонь
         graph_utils.add_rel_to_graph(self.G, current_node, feed)
 
@@ -60,7 +60,7 @@ class GraphDataManager:
         self.save_relevance_meta(self.feed_path, dict(video_id=current_node, related=feed))
         self.save_videos_meta(self.feed_path, new_feed_meta)
         ### Тут кончается залупонь
-        print('Any shit update4', list(f for f in self.G.nodes if (self.G.nodes[f].get('nodetype', None) is None)))
+        # print('Any shit update4', list(f for f in self.G.nodes if (self.G.nodes[f].get('nodetype', None) is None)))
 
     @staticmethod
     def _add_video_channel_pairs(G: nx.Graph,
@@ -123,7 +123,7 @@ def start_exploring(start_key=None):
     feed_path = 'graph_feed.jsonl'
     data_manager = GraphDataManager(feed_path)
     start_key = start_key or graph_utils.get_node_candidate(data_manager.G)
-    crawl(start_key, feed_sampler, log_each=5, max_iters=50,
+    crawl(start_key, feed_sampler, log_each=5, max_iters=100,
           data_manager=data_manager)
 
 
