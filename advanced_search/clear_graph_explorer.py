@@ -1,13 +1,11 @@
-import graph_utils
+from advanced_search import graph_utils
+from advanced_search.youtube_feed import get_videos_meta_by_id
+from advanced_search.parse_feed import parse_feed
 
 from tqdm.auto import tqdm
 from loguru import logger
-
-from youtube_feed import get_videos_meta_by_id
-from typing import Union, List, Dict
-from advanced_search.parse_feed import parse_feed
 import json
-from advanced_search.youtube_feed import youtube_feed_sampler
+from typing import Union, List, Dict
 import networkx as nx
 import os
 
@@ -116,17 +114,3 @@ def crawl(seed_video: str,
         if log_each and iter_id % log_each == 0:
             logger.debug(f'Iter id: {iter_id};'
                          f'KV: {len(data_manager.all_known_videos)}; KC: {len(data_manager.all_known_channels)}')
-
-
-def start_exploring(start_key=None):
-    feed_sampler = youtube_feed_sampler()
-    feed_path = 'graph_feed.jsonl'
-    data_manager = GraphDataManager(feed_path)
-    start_key = start_key or graph_utils.get_node_candidate(data_manager.G)
-    crawl(start_key, feed_sampler, log_each=5, max_iters=100,
-          data_manager=data_manager)
-
-
-if __name__ == '__main__':
-    start_exploring(start_key = '0dnLGoVYaz8')
-    # start_exploring()
